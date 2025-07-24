@@ -11,7 +11,7 @@ export interface FieldTypeDefinition {
 }
 
 export interface FieldSettingsDefinition {
-  type: 'text' | 'checkbox' | 'select' | 'dynamic-options';
+  type: 'text' | 'number' | 'checkbox' | 'select' | 'date' | 'dynamic-options';
   key: string;
   label: string;
   options?: OptionItem[];
@@ -30,4 +30,15 @@ export interface FormField {
   inputType?: string;
   placeholder?: string;
   options?: OptionItem[];
+  min?: number;
+  max?: number;
+  minDate?: any;
+  maxDate?: any;
+  step?: number;
+  value?: any;
+  rows?: any;
+  multiple?: any;
+  accept?: any;
+  checked?: any;
+  style?: any;
 }

@@ -58,7 +58,6 @@ export class FormService {
     });
     startViewTransition(() => {
       this._rows.set(newRows);
-      this.appRef.tick();
     });
   }
 
@@ -77,14 +76,13 @@ export class FormService {
 
     startViewTransition(() => {
       this._rows.set(newRows);
-      this.appRef.tick();
     });
   }
 
   moveField(
     fieldId: string,
     sourceRowId: string,
-    tragetRowId: string,
+    targetRowId: string,
     targetIndex: number = -1
   ) {
     const rows = this._rows();
@@ -112,7 +110,7 @@ export class FormService {
     );
     newRows[sourceRowIndex].fields = fieldsWithRemovedField;
 
-    const targetRowIndex = newRows.findIndex((row) => row.id === tragetRowId);
+    const targetRowIndex = newRows.findIndex((row) => row.id === targetRowId);
     if (targetRowIndex >= 0) {
       const targetFields = [...newRows[targetRowIndex].fields];
       targetFields.splice(targetIndex, 0, fieldToMove);
@@ -121,7 +119,6 @@ export class FormService {
 
     startViewTransition(() => {
       this._rows.set(newRows);
-      this.appRef.tick();
     });
   }
 

@@ -5,6 +5,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { FormsModule } from '@angular/forms';
 import { DynamicOptionsComponent } from './dynamic-options/dynamic-options.component';
 
@@ -16,6 +18,8 @@ import { DynamicOptionsComponent } from './dynamic-options/dynamic-options.compo
     FormsModule,
     MatSelectModule,
     MatCheckboxModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     DynamicOptionsComponent,
   ],
   template: `
@@ -35,6 +39,31 @@ import { DynamicOptionsComponent } from './dynamic-options/dynamic-options.compo
             [ngModel]="fieldValues()[setting.key]"
             (ngModelChange)="updateField(selectedField.id, setting.key, $event)"
           />
+        </mat-form-field>
+        } @case('number') {
+        <mat-form-field>
+          <mat-label>{{ setting.label }}</mat-label>
+          <input
+            matInput
+            type="number"
+            [ngModel]="fieldValues()[setting.key]"
+            (ngModelChange)="updateField(selectedField.id, setting.key, $event)"
+          />
+        </mat-form-field>
+        } @case('date') {
+        <mat-form-field>
+          <mat-label>{{ setting.label }}</mat-label>
+          <input
+            matInput
+            [matDatepicker]="picker"
+            [ngModel]="fieldValues()[setting.key]"
+            (ngModelChange)="updateField(selectedField.id, setting.key, $event)"
+          />
+          <mat-datepicker-toggle
+            matIconSuffix
+            [for]="picker"
+          ></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
         </mat-form-field>
         } @case('checkbox') {
         <div class="flex items-center">
@@ -64,6 +93,11 @@ import { DynamicOptionsComponent } from './dynamic-options/dynamic-options.compo
           (optionsChange)="updateField(selectedField.id, setting.key, $event)"
         />
         } } }
+      </div>
+      } @else {
+      <div class="text-center text-gray-500 mt-8">
+        <p class="text-lg">No field selected</p>
+        <p class="text-sm">Click on a field to edit its properties</p>
       </div>
       }
     </div>

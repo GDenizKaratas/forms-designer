@@ -42,9 +42,38 @@ mat-form-field {
   );
 }
 
+/* Faster, more optimized transitions */
 ::view-transition-old(.field-transition),
 ::view-transition-new(.field-transition) {
-  animation-duration: 150ms;
-  animation-timing-function: ease-in-out;
-  height: 100%;
+  animation-duration: 100ms; /* Reduced from 150ms */
+  animation-timing-function: cubic-bezier(
+    0.4,
+    0,
+    0.2,
+    1
+  ); /* More modern easing */
+  will-change: transform, opacity; /* Optimize for GPU acceleration */
+  transform: translateZ(0); /* Force hardware acceleration */
+}
+
+/* Optimize row transitions */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 100ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reduce repaints during drag operations */
+.cdk-drop-list-dragging:not(.elements-menu) {
+  border: 2px solid lightgray !important;
+  background-color: lightgray !important;
+  will-change: transform; /* GPU optimization */
+  transform: translateZ(0); /* Force hardware acceleration */
+}
+
+/* Add specific transitions for different operations */
+::view-transition-old(.row-transition),
+::view-transition-new(.row-transition) {
+  animation-duration: 80ms; /* Even faster for row operations */
+  animation-timing-function: ease-out;
 }
