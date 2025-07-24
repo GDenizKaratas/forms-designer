@@ -1,6 +1,14 @@
-import { computed, Injectable, signal } from '@angular/core';
+import {
+  ApplicationRef,
+  computed,
+  inject,
+  Injectable,
+  signal,
+} from '@angular/core';
 import { FormRow } from '../models/form';
 import { FormField } from '../models/field';
+import { FieldTypesService } from './field-types.service';
+import { startViewTransition } from '../utils/view-transition';
 
 @Injectable({
   providedIn: 'root',
@@ -16,7 +24,9 @@ export class FormService {
       .find((field) => field.id === this._selectedFieldId())
   );
 
-  constructor() {
+  private appRef = inject(ApplicationRef);
+
+  constructor(private fieldTypesService: FieldTypesService) {
     this._rows.set([{ id: crypto.randomUUID(), fields: [] }]);
   }
 
@@ -34,7 +44,10 @@ export class FormService {
       }
       return row;
     });
-    this._rows.set(newRows);
+
+    startViewTransition(() => {
+      this._rows.set(newRows);
+    });
   }
 
   deleteField(fieldId: string) {
@@ -43,12 +56,17 @@ export class FormService {
       const updatedFields = row.fields.filter((field) => field.id !== fieldId);
       return { ...row, fields: updatedFields };
     });
-    this._rows.set(newRows);
+    startViewTransition(() => {
+      this._rows.set(newRows);
+      this.appRef.tick();
+    });
   }
 
   addRow() {
     const newRow: FormRow = { id: crypto.randomUUID(), fields: [] };
-    this._rows.set([...this._rows(), newRow]);
+    startViewTransition(() => {
+      this._rows.set([...this._rows(), newRow]);
+    });
   }
 
   deleteRow(rowId: string) {
@@ -56,7 +74,11 @@ export class FormService {
       return;
     }
     const newRows = this._rows().filter((row) => row.id !== rowId);
-    this._rows.set(newRows);
+
+    startViewTransition(() => {
+      this._rows.set(newRows);
+      this.appRef.tick();
+    });
   }
 
   moveField(
@@ -97,7 +119,10 @@ export class FormService {
       newRows[targetRowIndex].fields = targetFields;
     }
 
-    this._rows.set(newRows);
+    startViewTransition(() => {
+      this._rows.set(newRows);
+      this.appRef.tick();
+    });
   }
 
   setSelectedField(fieldId: string) {
@@ -115,6 +140,107 @@ export class FormService {
       });
       return { ...row, fields: updatedFields };
     });
-    this._rows.set(newRows);
+    startViewTransition(() => {
+      this._rows.set(newRows);
+    });
+  }
+
+  moveRowUp(rowId: string) {
+    const rows = this._rows();
+    const rowIndex = rows.findIndex((row) => row.id === rowId);
+    if (rowIndex > 0) {
+      const newRows = [...rows];
+      const temp = newRows[rowIndex - 1];
+      newRows[rowIndex - 1] = newRows[rowIndex];
+      newRows[rowIndex] = temp;
+
+      startViewTransition(() => {
+        this._rows.set(newRows);
+      });
+    }
+  }
+
+  moveRowDown(rowId: string) {
+    const rows = this._rows();
+    const rowIndex = rows.findIndex((row) => row.id === rowId);
+    if (rowIndex < rows.length - 1) {
+      const newRows = [...rows];
+      const temp = newRows[rowIndex + 1];
+      newRows[rowIndex + 1] = newRows[rowIndex];
+      newRows[rowIndex] = temp;
+      startViewTransition(() => {
+        this._rows.set(newRows);
+      });
+    }
+  }
+
+  //Export related functionality
+  exportForm() {
+    const formCode = this.generateFormCode();
+    const blob = new Blob([formCode], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'form.ts';
+    link.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  generateFormCode(): string {
+    let code = this.generateImports();
+    code += this.generateComponentDecoretor();
+    code += `  template: \`\n` + `    <form class="flex flex-col gap-4">\n`;
+
+    for (const row of this._rows()) {
+      if (row.fields.length > 0) {
+        code += `       <div class="flex gap-4 flex-wrap">\n`;
+        for (const field of row.fields) {
+          code += `       <div class="flex-1">\n`;
+          code += this.generateFieldCode(field);
+          code += `        </div>\n`;
+        }
+
+        code += `        </div>\n`;
+      }
+    }
+
+    code += `    </form>\n`;
+    code += `  \`,\n`;
+    code += `})\n`;
+    code += `export class GeneratedFormComponent { \n`;
+    code += `}\n`;
+
+    return code;
+  }
+
+  generateFieldCode(field: FormField): string {
+    const fieldDef = this.fieldTypesService.getFieldType(field.type);
+    return fieldDef?.generateCode(field) || '';
+  }
+
+  generateImports(): string {
+    return (
+      `import { Component } from '@angular/core';>\n` +
+      `import { FormsModule } from '@angular/forms';\n` +
+      `import { MatButtonModule } from '@angular/material/button';\n` +
+      `import { MatInputModule } from '@angular/material/input';\n` +
+      `import { MatSelectModule } from '@angular/material/select';\n` +
+      `import { MatCheckboxModule } from '@angular/material/checkbox';\n` +
+      `import { MatRadioModule } from '@angular/material/radio';\n` +
+      `import { MatDatepickerModule } from '@angular/material/datepicker';\n` +
+      `import { MatNativeDateModule } from '@angular/material/core';\n` +
+      `import { MatIconModule } from '@angular/material/icon';\n` +
+      `import { MatToolbarModule } from '@angular/material/toolbar';\n` +
+      `import { MatFormFieldModule } from '@angular/material/form-field';\n` +
+      `import { MatTooltipModule } from '@angular/material/tooltip';\n`
+    );
+  }
+
+  generateComponentDecoretor(): string {
+    return (
+      `@Component({\n` +
+      `  selector: 'app-exported-form',\n` +
+      `  imports: [FormsModule, MatButtonModule, MatInputModule, MatSelectModule, MatCheckboxModule, MatRadioModule, MatDatepickerModule, MatNativeDateModule, MatIconModule, MatToolbarModule, MatFormFieldModule, MatTooltipModule],\n`
+    );
   }
 }

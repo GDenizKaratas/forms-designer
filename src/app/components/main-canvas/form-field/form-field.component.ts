@@ -16,9 +16,11 @@ import { FieldPreviewComponent } from '../field-preview/field-preview.component'
   ],
   template: `
     <div
-      class="bg-white p-4 pt-1 rounded-lg shadow-sm border border-gray-200 hover:border-black cursor-pointer"
+      class="bg-white p-4 pt-1 rounded-lg shadow-sm border border-gray-200 hover:border-primary cursor-pointer"
       [class]="
-        formService.selectedField()?.id === field().id ? '!border-black' : ''
+        formService.selectedField()?.id === field().id
+          ? '!border-primary !bg-background'
+          : ''
       "
       (click)="formService.setSelectedField(field().id)"
     >
